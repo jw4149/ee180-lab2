@@ -50,6 +50,7 @@ void sobelCalc(Mat& img_gray, Mat& img_sobel_out)
 {
   Mat img_outx = img_gray.clone();
   Mat img_outy = img_gray.clone();
+  img_sobel_out = img_gray.clone();
 
   for (int i=1; i<img_gray.rows; i++) {
     for (int j=1; j<img_gray.cols; j += 8) {
@@ -121,13 +122,20 @@ void sobelCalc(Mat& img_gray, Mat& img_sobel_out)
     }
   }
 
-  // Combine the two convolutions into the output image
   for (int i=1; i<img_gray.rows; i++) {
-    for (int j=1; j<img_gray.cols; j++) {
-      sobel = img_outx.data[IMG_WIDTH*(i) + j] +
-	            img_outy.data[IMG_WIDTH*(i) + j];
-      sobel = (sobel > 255) ? 255 : sobel;
-      img_sobel_out.data[IMG_WIDTH*(i) + j] = sobel;
+    for (int j=1; j<img_gray.cols; j += 8) {
+
+      uint8x8_t xdata = vld1_u8(img_outx.data+IMG_WIDTH*(i)+(j));
+      uint8x8_t ydata = vld1_u8(img_outy.data+IMG_WIDTH*(i)+(j));
+
+      uint16x8_t xdata16 = vmovl_u8(xdata);
+      uint16x8_t ydata16 = vmovl_u8(ydata);
+
+      uint16x8_t sobel = vaddq_u16(xdata16, ydata16);
+      sobel = vminq_u16(sobel, vdupq_n_u16(255));
+
+      vst1_u8(img_sobel_out.data+IMG_WIDTH*(i)+(j), vmovn_u16(sobel));
+
     }
   }
 }
