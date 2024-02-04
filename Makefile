@@ -1,6 +1,6 @@
 # Set compiler args
 CC=g++
-CFLAGS=-Wall -c -fno-tree-vectorize
+CFLAGS=-Wall -c -O3 -fno-tree-vectorize -mfpu=neon
 LDFLAGS=
 LDLIBS=-L /usr/lib $$(pkg-config --cflags --libs opencv) -pthread
 ifeq ($(shell arch), armv7l)

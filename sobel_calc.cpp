@@ -11,34 +11,30 @@ using namespace cv;
  ********************************************/
 void grayScale(Mat& img, Mat& img_gray_out)
 {
-  // double color;
-
   unsigned img_len = img.rows * img.cols;
   
-  float32x4x3_t intlv_rgb;
-  for (int i = 0; i < img_len/4; i++) {
-    intlv_rgb = vld3q_f32(img.data + 3*4*i);
-    float32x4_t r_mult_coeff = vdupq_n_f32(.114f);
-    float32x4_t g_mult_coeff = vdupq_n_f32(.587f);
-    float32x4_t b_mult_coeff = vdupq_n_f32(.299f);
-    intlv_rgb.val[0] = vmulq_f32(intlv_rgb.val[0], r_mult_coeff);
-    intlv_rgb.val[1] = vmulq_f32(intlv_rgb.val[1], g_mult_coeff);
-    intlv_rgb.val[2] = vmulq_f32(intlv_rgb.val[2], b_mult_coeff);
-    float32x4_t color = vaddq_f32(intlv_rgb.val[0], intlv_rgb.val[1]);
-    color = vaddq_f32(color, intlv_rgb.val[2]);
-    vst3q_f32(img_gray_out.data + 3*4*i, color);
+  uint8x8x3_t rgbs;
+  for (unsigned i = 0; i < img_len/8; i++) {
+
+    rgbs = vld3_u8(img.data+i*3*8);
+
+    uint16x8_t rs = vmovl_u8(rgbs.val[0]);
+    uint16x8_t gs = vmovl_u8(rgbs.val[1]);
+    uint16x8_t bs = vmovl_u8(rgbs.val[2]);
+
+    rs = vmulq_n_u16(rs, 29);
+    gs = vmulq_n_u16(gs, 150);
+    bs = vmulq_n_u16(bs, 76);
+
+    rs = vshrq_n_u16(rs, 8);
+    gs = vshrq_n_u16(gs, 8);
+    bs = vshrq_n_u16(bs, 8);
+
+    uint16x8_t color = vaddq_u16(rs, gs);
+    color = vaddq_u16(color, bs);
+
+    vst1_u8(img_gray_out.data+i*8, vmovn_u16(color));
   }
-
-
-  // Convert to grayscale
-  // for (int i=0; i<img.rows; i++) {
-  //   for (int j=0; j<img.cols; j++) {
-  //     color = .114*img.data[STEP0*i + STEP1*j] +
-  //             .587*img.data[STEP0*i + STEP1*j + 1] +
-  //             .299*img.data[STEP0*i + STEP1*j + 2];
-  //     img_gray_out.data[IMG_WIDTH*i + j] = color;
-  //   }
-  // }
 }
 
 /*******************************************
