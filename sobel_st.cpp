@@ -63,7 +63,7 @@ void runSobelST()
   while (1) {
     // Allocate memory to hold grayscale and sobel images
     img_gray = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
-    img_sobel = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
+    img_sobel = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
 
     pc_start(&perf_counters);
     src = cvQueryFrame(video_cap);

@@ -50,6 +50,7 @@ void sobelCalc(Mat& img_gray, Mat& img_sobel_out)
 {
   Mat img_outx = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
   Mat img_outy = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
+  img_sobel_out = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
 
   for (int i=1; i<img_gray.rows; i++) {
     for (int j=1; j<img_gray.cols; j += 8) {
