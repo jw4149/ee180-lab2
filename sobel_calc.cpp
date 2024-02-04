@@ -48,9 +48,8 @@ void grayScale(Mat& img, Mat& img_gray_out)
  ********************************************/
 void sobelCalc(Mat& img_gray, Mat& img_sobel_out)
 {
-  Mat img_outx = img_gray.clone();
-  Mat img_outy = img_gray.clone();
-  img_sobel_out = img_gray.clone();
+  Mat img_outx = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
+  Mat img_outy = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
 
   for (int i=1; i<img_gray.rows; i++) {
     for (int j=1; j<img_gray.cols; j += 8) {
