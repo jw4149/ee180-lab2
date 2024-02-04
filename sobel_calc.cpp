@@ -51,37 +51,73 @@ void sobelCalc(Mat& img_gray, Mat& img_sobel_out)
   Mat img_outx = img_gray.clone();
   Mat img_outy = img_gray.clone();
 
-  // Apply Sobel filter to black & white image
-  unsigned short sobel;
-
-  // Calculate the x convolution
   for (int i=1; i<img_gray.rows; i++) {
-    for (int j=1; j<img_gray.cols; j++) {
-      sobel = abs(img_gray.data[IMG_WIDTH*(i-1) + (j-1)] -
-		  img_gray.data[IMG_WIDTH*(i+1) + (j-1)] +
-		  2*img_gray.data[IMG_WIDTH*(i-1) + (j)] -
-		  2*img_gray.data[IMG_WIDTH*(i+1) + (j)] +
-		  img_gray.data[IMG_WIDTH*(i-1) + (j+1)] -
-		  img_gray.data[IMG_WIDTH*(i+1) + (j+1)]);
+    for (int j=1; j<img_gray.cols; j += 8) {
+      uint8x8_t one = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j-1));
+      int16x8_t one16 = vreinterpretq_s16_u16(vmovl_u8(one));
 
-      sobel = (sobel > 255) ? 255 : sobel;
-      img_outx.data[IMG_WIDTH*(i) + (j)] = sobel;
+      uint8x8_t two = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j-1));
+      int16x8_t two16 = vreinterpretq_s16_u16(vmovl_u8(two));
+
+      uint8x8_t three = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j));
+      int16x8_t three16 = vreinterpretq_s16_u16(vmovl_u8(three));
+      three16 = vaddq_s16(three16, three16);
+
+      uint8x8_t four = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j));
+      int16x8_t four16 = vreinterpretq_s16_u16(vmovl_u8(four));
+      four16 = vaddq_s16(four16, four16);
+
+      uint8x8_t five = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j+1));
+      int16x8_t five16 = vreinterpretq_s16_u16(vmovl_u8(five));
+
+      uint8x8_t six = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j+1));
+      int16x8_t six16 = vreinterpretq_s16_u16(vmovl_u8(six));
+
+      int16x8_t sobel16 = vsubq_s16(one16, two16);
+      sobel16 = vaddq_s16(sobel16, three16);
+      sobel16 = vsubq_s16(sobel16, four16);
+      sobel16 = vaddq_s16(sobel16, five16);
+      sobel16 = vsubq_s16(sobel16, six16);
+
+      sobel16 = vabsq_s16(sobel16);
+      sobel16 = vminq_s16(sobel16, vdupq_n_s16(255));
+
+      vst1_u8(img_outx.data+IMG_WIDTH*(i)+(j), vreinterpret_u8_s8(vmovn_s16(sobel16)));
     }
   }
 
-  // Calc the y convolution
   for (int i=1; i<img_gray.rows; i++) {
-    for (int j=1; j<img_gray.cols; j++) {
-     sobel = abs(img_gray.data[IMG_WIDTH*(i-1) + (j-1)] -
-		   img_gray.data[IMG_WIDTH*(i-1) + (j+1)] +
-		   2*img_gray.data[IMG_WIDTH*(i) + (j-1)] -
-		   2*img_gray.data[IMG_WIDTH*(i) + (j+1)] +
-		   img_gray.data[IMG_WIDTH*(i+1) + (j-1)] -
-		   img_gray.data[IMG_WIDTH*(i+1) + (j+1)]);
+    for (int j=1; j<img_gray.cols; j += 8) {
+      uint8x8_t one = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j-1));
+      int16x8_t one16 = vreinterpretq_s16_u16(vmovl_u8(one));
 
-     sobel = (sobel > 255) ? 255 : sobel;
+      uint8x8_t two = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j+1));
+      int16x8_t two16 = vreinterpretq_s16_u16(vmovl_u8(two));
 
-     img_outy.data[IMG_WIDTH*(i) + j] = sobel;
+      uint8x8_t three = vld1_u8(img_gray.data+IMG_WIDTH*(i)+(j-1));
+      int16x8_t three16 = vreinterpretq_s16_u16(vmovl_u8(three));
+      three16 = vaddq_s16(three16, three16);
+
+      uint8x8_t four = vld1_u8(img_gray.data+IMG_WIDTH*(i)+(j+1));
+      int16x8_t four16 = vreinterpretq_s16_u16(vmovl_u8(four));
+      four16 = vaddq_s16(four16, four16);
+
+      uint8x8_t five = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j-1));
+      int16x8_t five16 = vreinterpretq_s16_u16(vmovl_u8(five));
+
+      uint8x8_t six = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j+1));
+      int16x8_t six16 = vreinterpretq_s16_u16(vmovl_u8(six));
+
+      int16x8_t sobel16 = vsubq_s16(one16, two16);
+      sobel16 = vaddq_s16(sobel16, three16);
+      sobel16 = vsubq_s16(sobel16, four16);
+      sobel16 = vaddq_s16(sobel16, five16);
+      sobel16 = vsubq_s16(sobel16, six16);
+
+      sobel16 = vabsq_s16(sobel16);
+      sobel16 = vminq_s16(sobel16, vdupq_n_s16(255));
+
+      vst1_u8(img_outy.data+IMG_WIDTH*(i)+(j), vreinterpret_u8_s8(vmovn_s16(sobel16)));
     }
   }
 
