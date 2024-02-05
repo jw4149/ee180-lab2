@@ -48,94 +48,63 @@ void grayScale(Mat& img, Mat& img_gray_out)
  ********************************************/
 void sobelCalc(Mat& img_gray, Mat& img_sobel_out)
 {
-  Mat img_outx = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
-  Mat img_outy = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
   img_sobel_out = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
 
   for (int i=1; i<img_gray.rows; i++) {
-    for (int j=1; j<img_gray.cols; j += 8) {
-      uint8x8_t one = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j-1));
-      int16x8_t one16 = vreinterpretq_s16_u16(vmovl_u8(one));
+    for (int j=0; j<img_gray.cols; j += 8) {
+      uint8x8_t upper_left = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j));
+      int16x8_t upper_left16 = vreinterpretq_s16_u16(vmovl_u8(upper_left));
 
-      uint8x8_t two = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j-1));
-      int16x8_t two16 = vreinterpretq_s16_u16(vmovl_u8(two));
+      uint8x8_t lower_left = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j));
+      int16x8_t lower_left16 = vreinterpretq_s16_u16(vmovl_u8(lower_left));
 
-      uint8x8_t three = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j));
-      int16x8_t three16 = vreinterpretq_s16_u16(vmovl_u8(three));
-      three16 = vaddq_s16(three16, three16);
+      uint8x8_t upper = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j+1));
+      int16x8_t upper16 = vreinterpretq_s16_u16(vmovl_u8(upper));
+      upper16 = vaddq_s16(upper16, upper16);
 
-      uint8x8_t four = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j));
-      int16x8_t four16 = vreinterpretq_s16_u16(vmovl_u8(four));
-      four16 = vaddq_s16(four16, four16);
+      uint8x8_t lower = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j+1));
+      int16x8_t lower16 = vreinterpretq_s16_u16(vmovl_u8(lower));
+      lower16 = vaddq_s16(lower16, lower16);
 
-      uint8x8_t five = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j+1));
-      int16x8_t five16 = vreinterpretq_s16_u16(vmovl_u8(five));
+      uint8x8_t left = vld1_u8(img_gray.data+IMG_WIDTH*(i)+(j));
+      int16x8_t left16 = vreinterpretq_s16_u16(vmovl_u8(left));
+      left16 = vaddq_s16(left16, left16);
 
-      uint8x8_t six = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j+1));
-      int16x8_t six16 = vreinterpretq_s16_u16(vmovl_u8(six));
+      uint8x8_t right = vld1_u8(img_gray.data+IMG_WIDTH*(i)+(j+2));
+      int16x8_t right16 = vreinterpretq_s16_u16(vmovl_u8(right));
+      right16 = vaddq_s16(right16, right16);
 
-      int16x8_t sobel16 = vsubq_s16(one16, two16);
-      sobel16 = vaddq_s16(sobel16, three16);
-      sobel16 = vsubq_s16(sobel16, four16);
-      sobel16 = vaddq_s16(sobel16, five16);
-      sobel16 = vsubq_s16(sobel16, six16);
+      uint8x8_t upper_right = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j+2));
+      int16x8_t upper_right16 = vreinterpretq_s16_u16(vmovl_u8(upper_right));
 
-      sobel16 = vabsq_s16(sobel16);
-      sobel16 = vminq_s16(sobel16, vdupq_n_s16(255));
+      uint8x8_t lower_right = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j+2));
+      int16x8_t lower_right16 = vreinterpretq_s16_u16(vmovl_u8(lower_right));
 
-      vst1_u8(img_outx.data+IMG_WIDTH*(i)+(j), vreinterpret_u8_s8(vmovn_s16(sobel16)));
-    }
-  }
+      int16x8_t sobel16x = vsubq_s16(upper_left16, lower_left16);
+      sobel16x = vaddq_s16(sobel16x, upper16);
+      sobel16x = vsubq_s16(sobel16x, lower16);
+      sobel16x = vaddq_s16(sobel16x, upper_right16);
+      sobel16x = vsubq_s16(sobel16x, lower_right16);
 
-  for (int i=1; i<img_gray.rows; i++) {
-    for (int j=1; j<img_gray.cols; j += 8) {
-      uint8x8_t one = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j-1));
-      int16x8_t one16 = vreinterpretq_s16_u16(vmovl_u8(one));
+      sobel16x = vabsq_s16(sobel16x);
+      sobel16x = vminq_s16(sobel16x, vdupq_n_s16(255));
 
-      uint8x8_t two = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j+1));
-      int16x8_t two16 = vreinterpretq_s16_u16(vmovl_u8(two));
+      int16x8_t sobel16y = vsubq_s16(upper_left16, upper_right16);
+      sobel16y = vaddq_s16(sobel16y, left16);
+      sobel16y = vsubq_s16(sobel16y, right16);
+      sobel16y = vaddq_s16(sobel16y, lower_left16);
+      sobel16y = vsubq_s16(sobel16y, lower_right16);
 
-      uint8x8_t three = vld1_u8(img_gray.data+IMG_WIDTH*(i)+(j-1));
-      int16x8_t three16 = vreinterpretq_s16_u16(vmovl_u8(three));
-      three16 = vaddq_s16(three16, three16);
+      sobel16y = vabsq_s16(sobel16y);
+      sobel16y = vminq_s16(sobel16y, vdupq_n_s16(255));
 
-      uint8x8_t four = vld1_u8(img_gray.data+IMG_WIDTH*(i)+(j+1));
-      int16x8_t four16 = vreinterpretq_s16_u16(vmovl_u8(four));
-      four16 = vaddq_s16(four16, four16);
+      uint16x8_t sobel16ux = vreinterpretq_u16_s16(sobel16x);
+      uint16x8_t sobel16uy = vreinterpretq_u16_s16(sobel16y);
 
-      uint8x8_t five = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j-1));
-      int16x8_t five16 = vreinterpretq_s16_u16(vmovl_u8(five));
-
-      uint8x8_t six = vld1_u8(img_gray.data+IMG_WIDTH*(i+1)+(j+1));
-      int16x8_t six16 = vreinterpretq_s16_u16(vmovl_u8(six));
-
-      int16x8_t sobel16 = vsubq_s16(one16, two16);
-      sobel16 = vaddq_s16(sobel16, three16);
-      sobel16 = vsubq_s16(sobel16, four16);
-      sobel16 = vaddq_s16(sobel16, five16);
-      sobel16 = vsubq_s16(sobel16, six16);
-
-      sobel16 = vabsq_s16(sobel16);
-      sobel16 = vminq_s16(sobel16, vdupq_n_s16(255));
-
-      vst1_u8(img_outy.data+IMG_WIDTH*(i)+(j), vreinterpret_u8_s8(vmovn_s16(sobel16)));
-    }
-  }
-
-  for (int i=1; i<img_gray.rows; i++) {
-    for (int j=1; j<img_gray.cols; j += 8) {
-
-      uint8x8_t xdata = vld1_u8(img_outx.data+IMG_WIDTH*(i)+(j));
-      uint8x8_t ydata = vld1_u8(img_outy.data+IMG_WIDTH*(i)+(j));
-
-      uint16x8_t xdata16 = vmovl_u8(xdata);
-      uint16x8_t ydata16 = vmovl_u8(ydata);
-
-      uint16x8_t sobel = vaddq_u16(xdata16, ydata16);
+      uint16x8_t sobel = vaddq_u16(sobel16ux, sobel16uy);
       sobel = vminq_u16(sobel, vdupq_n_u16(255));
 
       vst1_u8(img_sobel_out.data+IMG_WIDTH*(i)+(j), vmovn_u16(sobel));
-
     }
   }
 }
