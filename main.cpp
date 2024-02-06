@@ -87,6 +87,12 @@ int mainSingleThread()
 pthread_barrier_t endSobel;
 pthread_mutex_t thread0 = PTHREAD_MUTEX_INITIALIZER;
 pthread_t thread0_id = 0;
+
+pthread_barrier_t capReady;
+pthread_barrier_t srcReady;
+pthread_barrier_t grayReady;
+pthread_barrier_t sobelReady;
+
 int mainMultiThread()
 {
   // Thread variables

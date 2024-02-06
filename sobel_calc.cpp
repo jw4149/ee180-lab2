@@ -37,6 +37,34 @@ void grayScale(Mat& img, Mat& img_gray_out)
   }
 }
 
+void grayScale_mt(Mat& img, Mat& img_gray_out, int start)
+{
+  unsigned img_len = img.rows/2 * img.cols;
+  
+  uint8x8x3_t rgbs;
+  for (unsigned i = 0; i < img_len/8; i++) {
+
+    rgbs = vld3_u8(img.data+start+i*3*8);
+
+    uint16x8_t rs = vmovl_u8(rgbs.val[0]);
+    uint16x8_t gs = vmovl_u8(rgbs.val[1]);
+    uint16x8_t bs = vmovl_u8(rgbs.val[2]);
+
+    rs = vmulq_n_u16(rs, 29);
+    gs = vmulq_n_u16(gs, 150);
+    bs = vmulq_n_u16(bs, 76);
+
+    rs = vshrq_n_u16(rs, 8);
+    gs = vshrq_n_u16(gs, 8);
+    bs = vshrq_n_u16(bs, 8);
+
+    uint16x8_t color = vaddq_u16(rs, gs);
+    color = vaddq_u16(color, bs);
+
+    vst1_u8(img_gray_out.data+start+i*8, vmovn_u16(color));
+  }
+}
+
 /*******************************************
  * Model: sobelCalc
  * Input: Mat img_in
@@ -48,8 +76,6 @@ void grayScale(Mat& img, Mat& img_gray_out)
  ********************************************/
 void sobelCalc(Mat& img_gray, Mat& img_sobel_out)
 {
-  img_sobel_out = Mat(IMG_HEIGHT, IMG_WIDTH, CV_8UC1, cv::Scalar(0));
-
   for (int i=1; i<img_gray.rows; i++) {
     for (int j=0; j<img_gray.cols; j += 8) {
       uint8x8_t upper_left = vld1_u8(img_gray.data+IMG_WIDTH*(i-1)+(j));
