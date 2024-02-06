@@ -28,6 +28,10 @@ extern pthread_barrier_t endSobel;
 extern pthread_mutex_t thread0;
 extern pthread_t thread0_id;
 
+extern pthread_barrier_t capReady;
+extern pthread_barrier_t srcReady;
+extern pthread_barrier_t grayReady;
+extern pthread_barrier_t sobelReady;
 
 // Commandline options
 struct opts {
@@ -41,6 +45,8 @@ extern struct opts opts;
 
 void sobelCalc(Mat& img_gray, Mat& img_sobel_out);
 void grayScale(Mat& img, Mat& img_gray_out);
+void grayScale_mt(Mat& img, Mat& img_gray_out, int start);
+void sobelCalc_mt(Mat& img_gray, Mat& img_sobel_out, int start);
 
 void runSobelST();
 void *runSobelMT(void *ptr);

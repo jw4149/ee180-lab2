@@ -100,6 +100,10 @@ int mainMultiThread()
 
   // Set up a barrier to synchronize both threads at the end of runSobel
   pthread_barrier_init(&endSobel, NULL, 2);
+  pthread_barrier_init(&capReady, NULL, 2);
+  pthread_barrier_init(&srcReady, NULL, 2);
+  pthread_barrier_init(&grayReady, NULL, 2);
+  pthread_barrier_init(&sobelReady, NULL, 2);
 
   // Call threads
   int ret;
@@ -118,6 +122,10 @@ int mainMultiThread()
 
   // Destroy the barriers
   pthread_barrier_destroy(&endSobel);
+  pthread_barrier_destroy(&capReady);
+  pthread_barrier_destroy(&srcReady);
+  pthread_barrier_destroy(&grayReady);
+  pthread_barrier_destroy(&sobelReady);
 
   // Return ok if sobel returns correctly
   return 0;
